@@ -4,26 +4,29 @@ class Stack(object):
 
     def __init__(self):
         self._items = []
+        self._size = 0
 
     def isEmpty(self):
-        return self._items == []
+        return self._size == 0
 
     def push(self, item):
         self._items.append(item)
+        self._size += 1
 
     def pop(self):
-        element = self._items[len(self._items)-1]
-        del(self._items[len(self._items)-1])
+        element = self._items[-1]
+        del(self._items[-1])
+        self._size -= 1
         return element
 
     def peek(self):
-        return self._items[len(self._items)-1]
+        return self._items[-1]
 
     def size(self):
-        return len(self._items)
+        return self._size
         
     def __str__(self):
-        return str(self._items)
+        return ' '.join([str(e) for e in self._items])
         
         
 def test():
