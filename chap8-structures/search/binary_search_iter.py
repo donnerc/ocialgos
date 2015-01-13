@@ -1,5 +1,3 @@
-from random import randint
-
 nombres = [1, 4, 7, 3, 9, 24]
 
 # pour que l'algorithme fonctionne, il faut que la liste soit triée
