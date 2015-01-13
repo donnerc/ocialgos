@@ -25,6 +25,7 @@ def search(liste, item):
             
     return None
         
-def test():        
+def test():
+    # on rajoute [30] comme valeur qui ne se trouve pas dans la liste
     for (i, n) in enumerate(nombres + [30]):
         print(search(nombres, n), i)
