@@ -1,4 +1,4 @@
-from random import randint
+# Code de recherche binaire dans une liste triée (version récursive)
 
 nombres = [1, 4, 7, 3, 9, 24]
 
