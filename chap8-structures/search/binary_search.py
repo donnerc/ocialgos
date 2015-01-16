@@ -1,4 +1,4 @@
-from random import randint
+# Code de recherche binaire dans une liste triée (version récursive)
 
 nombres = [1, 4, 7, 3, 9, 24]
 
@@ -6,28 +6,32 @@ nombres = [1, 4, 7, 3, 9, 24]
 nombres.sort()
 
 def search(n, start=0, end=None):
-    
+
     # pour donner à la variable locale 'end' une valeur par défaut de len(nombres) - 1
     end = end or len(nombres) - 1
-    
+
     middle = (start + end) // 2
     if start == middle:
         if n == nombres[start]:
             return start
+        elif n == nombres[end]:
+            return end
         else:
             return None
-            
+
     if n < nombres[middle]:
         return search(n, start=start, end=middle)
-        
+
     elif n > nombres[middle]:
         return search(n, start=middle, end=end)
-        
+
     else:
-        # n se trouve forcément dans la liste
+        # n se trouve forcément dans la liste à la position middle
         return middle
-        
-        
-for (i, n) in enumerate(nombres):
-    print(n, search(n), i)
-        
+
+def test():
+    for (i, n) in enumerate(nombres):
+        print(n, search(n), i)
+    print(30, search(30))
+
+test()
