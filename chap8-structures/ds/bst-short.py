@@ -75,7 +75,6 @@ peut-être encore d'autres.
     >>> None and 'trois'
     >>> (None and 'trois') == None
     True
-    >>> 
 
 '''
 
@@ -146,29 +145,6 @@ class BinarySearchTree(object):
         else:
             return False
 
-    # def delete(self, key, current_node=None):
-    #     current_node = current_node or self.root
-
-    #     if current_node.has_any_child():
-    #         if key < current_node.key:
-    #             self.delete(key, current_node.child[Side.L])
-    #         elif key > current_node.key:
-    #             self.delete(key, current_node.child[Side.R])
-    #         else:
-    #             # self.key == key
-    #             if not current_node.has_child[Side.L]:
-    #                 current_node.parent[current_node.side_in_parent] = \
-    #                     current_node.child[side.R]
-    #             elif not current_node.has_child[Side.R]:
-    #                 current_node.parent[current_node.side_in_parent] = \
-    #                     current_node.child[side.L]
-    #             else:
-    #                 # il y a deux fils et il faut chercher le successeur dans
-    #                 # le sous-arbre de droite
-
-        
-
-
     def delete(self, key):
         if self.size > 1:
             node_to_remove = self._get(key, self.root)
@@ -186,8 +162,13 @@ class BinarySearchTree(object):
     def __delitem__(self, key):
         self.delete(key)
 
-    # que fait cette fonction exactement ??? c'est là tout le problème ...
     def splice_out(self):
+        '''
+
+        Supprimer le noeud de l'arbre. On suppose que ce noeud n'a qu'un seul
+        fils.
+
+        '''
         if self.is_leaf():
             self.parent.child[self.side_in_parent] = None
 
@@ -200,16 +181,17 @@ class BinarySearchTree(object):
         else:
             raise NodeError('Error, cannot splice out node with two childs')
 
-
-    # il faudrait voir ce qu'est réellement ce noeud successeur ... désigne le
-    # noeud qui contient la plus petite valeure supérieure à la clé du noeud
-    # courant
     def find_successor(self, down=True):
         '''
 
         Le paramètre 'down' indique s'il faut chercher le successeur dans le
         sous arbre ou en amont. Par défaut, on cherche le successeur dans le
         sous-arbre droit.
+
+        Le successeur est en fait le prochain noeud dans l'ordre croissant. Il
+        se trouve soit à l'extrême gauche du sous-arbre droit si ce sous-arbre
+        existe. Dans le cas contraire, il s'agit du premier ancêtre qui
+        contient le noeud courant dans son sous-arbre gauche.
 
         '''
         succ = None
@@ -245,7 +227,7 @@ class BinarySearchTree(object):
 
             # déterminer de quel côté se situe le fils
             side = Side.L
-            if current.has_child[Side.R]:
+            if cur_node.has_child[Side.R]:
                 side = Side.R
 
             unique_child = cur_node.child[side]
