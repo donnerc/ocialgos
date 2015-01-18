@@ -1,16 +1,31 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+
 class Side(object):
     L = 0
     R = 1
 
+
+class NodeError(Exception):
+
+    def __init__(self, msg=None):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+
 def opposite_side(side):
     return (side + 1) % 2
 
+
 class TreeNode(object):
 
-    def __init__(self, key, val, left=None, right=None, parent=None, side_in_parent=None):
+    def __init__(
+        self, key, val, left=None, right=None,
+        parent=None, side_in_parent=None
+    ):
         self.key = key
         self.payload = val
         self.child = [left, right]
@@ -32,8 +47,8 @@ class TreeNode(object):
     def has_any_child(self):
         return self.child[Side.R] or self.child[Side.L]
 
-    def has_2_children(self):
-        return self.child[Side.R] or self.child[Side.L]
+    def has_both_children(self):
+        return self.child[Side.R] and self.child[Side.L]
 
     def replace_node_data(self, key, value, lc, rc):
         self.key = key
@@ -43,7 +58,7 @@ class TreeNode(object):
 
         for side in [Side.L, Side.R]:
             if self.has_child(side):
-                self.child[side] = self
+                self.child[side].parent = self
 
 
 '''
@@ -94,8 +109,7 @@ class BinarySearchTree(object):
             self._put(key, val, cur_node.child[side])
         else:
             cur_node.child[side] = TreeNode(
-                key,
-                val,
+                key, val,
                 parent=cur_node,
                 side_in_parent=side
             )
@@ -113,15 +127,15 @@ class BinarySearchTree(object):
         else:
             return None
 
-    def _get(self, key, current_node):
-        if not current_node:
+    def _get(self, key, cur_node):
+        if not cur_node:
             return None
-        elif current_node.key == key:
-            return current_node
-        elif key < current_node.key:
-            return self._get(key, current_node.child[Side.L])
+        elif cur_node.key == key:
+            return cur_node
+        elif key < cur_node.key:
+            return self._get(key, cur_node.child[Side.L])
         else:
-            return self._get(key, current_node.child[Side.R])
+            return self._get(key, cur_node.child[Side.R])
 
     def __getitem__(self, key):
         return self.get(key)
@@ -131,6 +145,29 @@ class BinarySearchTree(object):
             return True
         else:
             return False
+
+    # def delete(self, key, current_node=None):
+    #     current_node = current_node or self.root
+
+    #     if current_node.has_any_child():
+    #         if key < current_node.key:
+    #             self.delete(key, current_node.child[Side.L])
+    #         elif key > current_node.key:
+    #             self.delete(key, current_node.child[Side.R])
+    #         else:
+    #             # self.key == key
+    #             if not current_node.has_child[Side.L]:
+    #                 current_node.parent[current_node.side_in_parent] = \
+    #                     current_node.child[side.R]
+    #             elif not current_node.has_child[Side.R]:
+    #                 current_node.parent[current_node.side_in_parent] = \
+    #                     current_node.child[side.L]
+    #             else:
+    #                 # il y a deux fils et il faut chercher le successeur dans
+    #                 # le sous-arbre de droite
+
+        
+
 
     def delete(self, key):
         if self.size > 1:
@@ -149,97 +186,76 @@ class BinarySearchTree(object):
     def __delitem__(self, key):
         self.delete(key)
 
-    # que fait cette fonction exactement ???
+    # que fait cette fonction exactement ??? c'est là tout le problème ...
     def splice_out(self):
         if self.is_leaf():
             self.parent.child[self.side_in_parent] = None
 
-            # splice out suppose qu'il y a au maximum un seul fils ... j'ai
-            # l'impression que cette fonction splice_out n'est pas bien foutue
-        elif self.has_any_child():
-
-
-                self.parent.child[self.side_in_parent] = self.child[side]
-        elif self.has_any_child():
-            # l'impresion que ce n'est pas bon ... 
-            if self.has_child(Side.L):
-                if self.is_child(Side.L):
-                    self.parent.child[Side.L] = self.child[Side.L]
-                else:
-                    self.parent.child[Side.R] = self.child[Side.L]
-                self.child[Side.L].parent = self.parent
-
-            else:  # has no left child but has right child 
-                if self.isSide.LChild():
-                    self.parent.child[Side.L] = self.child[Side.R]
-                else:
-                    self.parent.child[Side.R] = self.child[Side.R]
-                self.child[Side.R].parent = self.parent
-
-    def findSuccessor(self):
-        succ = None
-        if self.hasRightChild():
-            succ = self.child[Side.R].findMin()
+        elif not self.has_both_children():
+            child_side = Side.L
+            if self.has_child(Side.R):
+                child_side = Side.L
+            unique_child = self.child[child_side]
+            self.parent.child[self.side_in_parent] = unique_child
         else:
-            if self.parent:
-                if self.isSide.LChild():
-                    succ = self.parent
-                else:
-                    self.parent.child[Side.R] = None
-                    succ = self.parent.findSuccessor()
-                    self.parent.child[Side.R] = self
+            raise NodeError('Error, cannot splice out node with two childs')
+
+
+    # il faudrait voir ce qu'est réellement ce noeud successeur ... désigne le
+    # noeud qui contient la plus petite valeure supérieure à la clé du noeud
+    # courant
+    def find_successor(self, down=True):
+        '''
+
+        Le paramètre 'down' indique s'il faut chercher le successeur dans le
+        sous arbre ou en amont. Par défaut, on cherche le successeur dans le
+        sous-arbre droit.
+
+        '''
+        succ = None
+        if down and self.has_child(Side.R):
+            succ = self.child[Side.R].find_min()
+        elif not down and self.parent is not None:
+            if self.is_child(Side.L):
+                succ = self.parent
+            else:
+                succ = self.parent.find_successor(down=False)
         return succ
 
-    def findMin(self):
+    def find_min(self):
         current = self
-        while current.hasSide.LChild():
+        while current.has_child(Side.L):
             current = current.child[Side.L]
         return current
 
-    def remove(self, currentNode):
-        if currentNode.is_leaf():  # leaf
-            if currentNode == currentNode.parent.child[Side.L]:
-                currentNode.parent.child[Side.L] = None
+    def remove(self, cur_node):
+        if cur_node.is_leaf():  # leaf
+            if cur_node.id_child(Side.L):
+                cur_node.parent.child[Side.L] = None
             else:
-                currentNode.parent.child[Side.R] = None
-        elif currentNode.hasBothChildren():  # interior
+                cur_node.parent.child[Side.R] = None
 
-            succ = currentNode.findSuccessor()
+        elif cur_node.has_both_children():  # interior
+            succ = cur_node.find_successor()
             succ.splice_out()
-            currentNode.key = succ.key
-            currentNode.payload = succ.payload
-        else:
-               # this node has one child
+            cur_node.key = succ.key
+            cur_node.payload = succ.payload
 
-            if currentNode.hasSide.LChild():
-                if currentNode.isSide.LChild():
-                    currentNode.child[Side.L].parent = currentNode.parent
-                    currentNode.parent.child[Side.L] = currentNode.child[Side.L]
-                elif currentNode.isRightChild():
-                    currentNode.child[Side.L].parent = currentNode.parent
-                    currentNode.parent.child[Side.R] = \
-                        currentNode.child[Side.L]
-                else:
-                    currentNode.replaceNodeData(currentNode.child[Side.L].key,
-                        currentNode.child[Side.L].payload,
-                        currentNode.child[Side.L],
-                        currentNode.child[Side.L].child[Side.R]
-                    )
-            else:
-                if currentNode.isSide.LChild():
-                    currentNode.child[Side.R].parent = currentNode.parent
-                    currentNode.parent.child[Side.L] = \
-                        currentNode.child[Side.R]
-                elif currentNode.isRightChild():
-                    currentNode.child[Side.R].parent = currentNode.parent
-                    currentNode.parent.child[Side.R] = \
-                        currentNode.child[Side.R]
-                else:
-                    currentNode.replaceNodeData(currentNode.child[Side.R].key,
-                        currentNode.child[Side.R].payload,
-                        currentNode.child[Side.R].child[Side.L],
-                        currentNode.child[Side.R].child[Side.R]
-                    )
+        else:  # this node has one child
+
+            # déterminer de quel côté se situe le fils
+            side = Side.L
+            if current.has_child[Side.R]:
+                side = Side.R
+
+            unique_child = cur_node.child[side]
+
+            # changer la référence dans le parent
+            cur_node.parent[cur_node.side_in_parent] = unique_child
+            # changer la référence dans le fils vers le parent du noeud
+            # courant
+            unique_child.side_in_parent = cur_node.side_in_parent
+            unique_child.parent = cur_node.parent
 
 
 def test():
