@@ -128,11 +128,20 @@ class BinarySearchTree(object):
         self.delete(key)
 
     def spliceOut(self):
+        '''
+
+        Supprimer le noeud de l'arbre. On suppose que ce noeud n'a qu'un seul
+        fils.
+
+        '''
         if self.isLeaf():
             if self.isLeftChild():
                 self.parent.leftChild = None
             else:
                 self.parent.rightChild = None
+
+        # est-il possible qu'il y ait deux fils à ce stade? Si oui, je pense
+        # que ce code peut créer des problèmes
         elif self.hasAnyChildren():
             if self.hasLeftChild():
                 if self.isLeftChild():
@@ -148,6 +157,13 @@ class BinarySearchTree(object):
                 self.rightChild.parent = self.parent
 
     def findSuccessor(self):
+        '''
+
+        Si findSuccessor est appelé sur un noeud qui possède un fils droit, il
+        retournera le plus petit noeud du sous-arbre correspondant. Le noeud
+        retourné n'aura alors pas de fils gauche.
+
+        '''
         succ = None
         if self.hasRightChild():
             succ = self.rightChild.findMin()
