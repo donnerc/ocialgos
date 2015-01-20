@@ -81,7 +81,7 @@ class TreeNode(object):
         elif not self.has_both_children():
             child_side = Side.L
             if self.has_child(Side.R):
-                child_side = Side.L
+                child_side = Side.R
             unique_child = self.child[child_side]
             self.parent.child[self.side_in_parent] = unique_child
         else:
@@ -220,13 +220,14 @@ class BinarySearchTree(object):
 
     def remove(self, cur_node):
         if cur_node.is_leaf():  # leaf
-            if cur_node.id_child(Side.L):
+            if cur_node.is_child(Side.L):
                 cur_node.parent.child[Side.L] = None
             else:
                 cur_node.parent.child[Side.R] = None
 
         elif cur_node.has_both_children():  # interior
             succ = cur_node.find_successor()
+            # cur_node.child[Side.R] = succ.child[Side.R]
             succ.splice_out()
             cur_node.key = succ.key
             cur_node.payload = succ.payload
@@ -235,13 +236,14 @@ class BinarySearchTree(object):
 
             # déterminer de quel côté se situe le fils
             side = Side.L
-            if cur_node.has_child[Side.R]:
+            if cur_node.has_child(Side.R):
                 side = Side.R
 
             unique_child = cur_node.child[side]
 
             # changer la référence dans le parent
-            cur_node.parent[cur_node.side_in_parent] = unique_child
+            if cur_node.parent:
+                cur_node.parent.child[cur_node.side_in_parent] = unique_child
             # changer la référence dans le fils vers le parent du noeud
             # courant
             unique_child.side_in_parent = cur_node.side_in_parent
@@ -281,10 +283,10 @@ class HTML(object):
     
     def __init__(self, filename):
         self.filename = filename
-        self.html = '<h1>Reprsentation de l\'arbre</h1>'
+        self.html = '<h1>Repr&eacute;sentation de l\'arbre</h1>'
         
     def add_image(self, image):
-        self.html += '<div style="display: inline; border: solid 1px black"><img src="{image}" />{image}</div>\n'.format(image=image)
+        self.html += '<div style="display: inline; border: solid 1px black"><img src="{image}" style="display: inline" /><div style="display: inline-block">{image}</div></div>\n'.format(image=image)
         
     def __del__(self):
         
@@ -292,7 +294,7 @@ class HTML(object):
             fd.write(self.html)
         
 def snapshot(tree, html, i):
-    filename = 'trees/tree' + str(i) + '.png'
+    filename = 'trees/tree-' + str(i) + '.png'
     tree.draw(filename=filename)
     html.add_image(filename)
 
@@ -303,13 +305,22 @@ def test():
     keys = [1,2,3,4,5,6,7,8]
     keys = list(set((1,3,5,2,4,7,5,9,3,7,78, 10, 15, 21)))
     shuffle(keys)
+    keys = [15, 5, 78, 21, 4, 1, 7, 10, 9, 2, 3]
     print(keys)
     
     html = HTML('tree.html')
     for i, k in enumerate(keys):
         t[k] = True
-        snapshot(t, html, i)
+        snapshot(t, html, 'insert-'+str(k))
         
+    for i, k in enumerate(keys):
+        del t[k]
+        snapshot(t, html, 'del-'+str(k))
+        
+    for node in [3, 10, 5, 15]:
+        del t[node]
+        snapshot(t, html, "del-" + str(node))
+
 
 
 
