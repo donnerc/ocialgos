@@ -1,6 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
+# documentation pour pydot : https://pythonhaven.wordpress.com/tag/pydot/
+import pydot as pd
 
 class Side(object):
     L = 0
@@ -59,6 +63,55 @@ class TreeNode(object):
         for side in [Side.L, Side.R]:
             if self.has_child(side):
                 self.child[side].parent = self
+                
+                
+    def splice_out(self):
+        '''
+
+        Supprimer le noeud de l'arbre. On suppose que ce noeud n'a qu'un seul
+        fils.
+
+        '''
+        if self.is_leaf():
+            self.parent.child[self.side_in_parent] = None
+
+        elif not self.has_both_children():
+            child_side = Side.L
+            if self.has_child(Side.R):
+                child_side = Side.L
+            unique_child = self.child[child_side]
+            self.parent.child[self.side_in_parent] = unique_child
+        else:
+            raise NodeError('Error, cannot splice out node with two childs')
+
+    def find_successor(self, down=True):
+        '''
+
+        Le paramètre 'down' indique s'il faut chercher le successeur dans le
+        sous arbre ou en amont. Par défaut, on cherche le successeur dans le
+        sous-arbre droit.
+
+        Le successeur est en fait le prochain noeud dans l'ordre croissant. Il
+        se trouve soit à l'extrême gauche du sous-arbre droit si ce sous-arbre
+        existe. Dans le cas contraire, il s'agit du premier ancêtre qui
+        contient le noeud courant dans son sous-arbre gauche.
+
+        '''
+        succ = None
+        if down and self.has_child(Side.R):
+            succ = self.child[Side.R].find_min()
+        elif not down and self.parent is not None:
+            if self.is_child(Side.L):
+                succ = self.parent
+            else:
+                succ = self.parent.find_successor(down=False)
+        return succ
+
+    def find_min(self):
+        current = self
+        while current.has_child(Side.L):
+            current = current.child[Side.L]
+        return current
 
 
 '''
@@ -161,54 +214,6 @@ class BinarySearchTree(object):
 
     def __delitem__(self, key):
         self.delete(key)
-
-    def splice_out(self):
-        '''
-
-        Supprimer le noeud de l'arbre. On suppose que ce noeud n'a qu'un seul
-        fils.
-
-        '''
-        if self.is_leaf():
-            self.parent.child[self.side_in_parent] = None
-
-        elif not self.has_both_children():
-            child_side = Side.L
-            if self.has_child(Side.R):
-                child_side = Side.L
-            unique_child = self.child[child_side]
-            self.parent.child[self.side_in_parent] = unique_child
-        else:
-            raise NodeError('Error, cannot splice out node with two childs')
-
-    def find_successor(self, down=True):
-        '''
-
-        Le paramètre 'down' indique s'il faut chercher le successeur dans le
-        sous arbre ou en amont. Par défaut, on cherche le successeur dans le
-        sous-arbre droit.
-
-        Le successeur est en fait le prochain noeud dans l'ordre croissant. Il
-        se trouve soit à l'extrême gauche du sous-arbre droit si ce sous-arbre
-        existe. Dans le cas contraire, il s'agit du premier ancêtre qui
-        contient le noeud courant dans son sous-arbre gauche.
-
-        '''
-        succ = None
-        if down and self.has_child(Side.R):
-            succ = self.child[Side.R].find_min()
-        elif not down and self.parent is not None:
-            if self.is_child(Side.L):
-                succ = self.parent
-            else:
-                succ = self.parent.find_successor(down=False)
-        return succ
-
-    def find_min(self):
-        current = self
-        while current.has_child(Side.L):
-            current = current.child[Side.L]
-        return current
 
     def remove(self, cur_node):
         if cur_node.is_leaf():  # leaf
