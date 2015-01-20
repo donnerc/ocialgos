@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 
 # documentation pour pydot : https://pythonhaven.wordpress.com/tag/pydot/
-import pydot as pd
+import pydot
 
 class Side(object):
     L = 0
@@ -35,6 +35,9 @@ class TreeNode(object):
         self.child = [left, right]
         self.parent = parent
         self.side_in_parent = side_in_parent
+        
+    def __str__(self):
+        return str(self.key)
 
     def has_child(self, side):
         return self.child[side]
@@ -244,20 +247,42 @@ class BinarySearchTree(object):
             unique_child.side_in_parent = cur_node.side_in_parent
             unique_child.parent = cur_node.parent
 
-    def draw(self):
-        pass
-        
+    def draw(self, current_node=None, graph=None, file=None):
+        # parcourirdepuis la racine et rajouter les noeuds (faire un parcours préfixé ???)
+        # TODO: write code...:
+        # création du graphe permettant de représenter l'arbre
+        graph = graph or pydot.Dot(graph_type='graph')
+        current_node = current_node or self.root
+
+        for (side, child) in enumerate(current_node.child):
+            if child:
+                edge = pydot.Edge(str(current_node), str(child))
+                graph.add_edge(edge)
+                self.draw(child, graph)
+            else:
+                side = str(side)
+                empty_node = pydot.Node("empty-"+str(current_node)+"-"+side, style="filled", fillcolor="red", shape="point", width=".2", height=".2")
+                graph.add_node(empty_node)
+                edge = pydot.Edge(str(current_node), empty_node)
+                graph.add_edge(edge)
+                
+        if current_node.is_root():
+            graph.write_png('trees/graph.png')
+            
 
 
 def test():
-    mytree = BinarySearchTree()
-    mytree[3] = 'red'
-    mytree[4] = 'blue'
-    mytree[6] = 'yellow'
-    mytree[2] = 'at'
-
-    print(mytree[6])
-    print(mytree[2])
+    from random import shuffle
+    
+    t = BinarySearchTree()
+    keys = [1,2,3,4,5,6,7,8]
+    keys = list(set((1,3,5,2,4,7,5,9,3,7,78, 10, 15, 21)))
+    shuffle(keys)
+    print(keys)
+    for k in keys:
+        t[k] = True
+    
+    t.draw()
 
 
 if __name__ == '__main__':
