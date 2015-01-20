@@ -247,18 +247,25 @@ class BinarySearchTree(object):
             unique_child.side_in_parent = cur_node.side_in_parent
             unique_child.parent = cur_node.parent
 
-    def draw(self, current_node=None, graph=None, file=None):
+    def draw(self, current_node=None, graph=None, no_iter=None, filename=None):
         # parcourirdepuis la racine et rajouter les noeuds (faire un parcours préfixé ???)
         # TODO: write code...:
         # création du graphe permettant de représenter l'arbre
         graph = graph or pydot.Dot(graph_type='graph')
         current_node = current_node or self.root
+        no_iter = no_iter or 1
+        filename = filename or 'trees/bst.png'
+        
+        if no_iter == 1:
+            with open('tree.html', mode='w') as fd:
+                fd.write('<h1>Representation de l\'arbre</h1>\n')
+                
 
         for (side, child) in enumerate(current_node.child):
             if child:
                 edge = pydot.Edge(str(current_node), str(child))
                 graph.add_edge(edge)
-                self.draw(child, graph)
+                self.draw(child, graph, no_iter=no_iter+1)
             else:
                 side = str(side)
                 empty_node = pydot.Node("empty-"+str(current_node)+"-"+side, style="filled", fillcolor="red", shape="point", width=".2", height=".2")
@@ -267,9 +274,27 @@ class BinarySearchTree(object):
                 graph.add_edge(edge)
                 
         if current_node.is_root():
-            graph.write_png('trees/graph.png')
-            
+            graph.write_png(filename)
 
+            
+class HTML(object):
+    
+    def __init__(self, filename):
+        self.filename = filename
+        self.html = '<h1>Reprsentation de l\'arbre</h1>'
+        
+    def add_image(self, image):
+        self.html += '<div style="display: inline; border: solid 1px black"><img src="{image}" />{image}</div>\n'.format(image=image)
+        
+    def __del__(self):
+        
+        with open(self.filename, mode='w') as fd:
+            fd.write(self.html)
+        
+def snapshot(tree, html, i):
+    filename = 'trees/tree' + str(i) + '.png'
+    tree.draw(filename=filename)
+    html.add_image(filename)
 
 def test():
     from random import shuffle
@@ -279,10 +304,13 @@ def test():
     keys = list(set((1,3,5,2,4,7,5,9,3,7,78, 10, 15, 21)))
     shuffle(keys)
     print(keys)
-    for k in keys:
-        t[k] = True
     
-    t.draw()
+    html = HTML('tree.html')
+    for i, k in enumerate(keys):
+        t[k] = True
+        snapshot(t, html, i)
+        
+
 
 
 if __name__ == '__main__':
