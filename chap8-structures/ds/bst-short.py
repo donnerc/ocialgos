@@ -239,6 +239,10 @@ class BinarySearchTree(object):
             unique_child.side_in_parent = cur_node.side_in_parent
             unique_child.parent = cur_node.parent
 
+    def draw(self):
+        pass
+        
+
 
 def test():
     mytree = BinarySearchTree()
