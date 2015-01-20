@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 # documentation pour pydot : https://pythonhaven.wordpress.com/tag/pydot/
 import pydot
 
+
 class Side(object):
     L = 0
     R = 1
@@ -35,7 +36,7 @@ class TreeNode(object):
         self.child = [left, right]
         self.parent = parent
         self.side_in_parent = side_in_parent
-        
+
     def __str__(self):
         return str(self.key)
 
@@ -66,8 +67,7 @@ class TreeNode(object):
         for side in [Side.L, Side.R]:
             if self.has_child(side):
                 self.child[side].parent = self
-                
-                
+
     def splice_out(self):
         '''
 
@@ -250,18 +250,17 @@ class BinarySearchTree(object):
             unique_child.parent = cur_node.parent
 
     def draw(self, current_node=None, graph=None, no_iter=None, filename=None):
-        # parcourirdepuis la racine et rajouter les noeuds (faire un parcours préfixé ???)
-        # TODO: write code...:
-        # création du graphe permettant de représenter l'arbre
+        # parcourirdepuis la racine et rajouter les noeuds (faire un parcours
+        # préfixé ???) TODO: write code...: création du graphe permettant de
+        # représenter l'arbre
         graph = graph or pydot.Dot(graph_type='graph')
         current_node = current_node or self.root
         no_iter = no_iter or 1
         filename = filename or 'trees/bst.png'
-        
+
         if no_iter == 1:
             with open('tree.html', mode='w') as fd:
                 fd.write('<h1>Representation de l\'arbre</h1>\n')
-                
 
         for (side, child) in enumerate(current_node.child):
             if child:
@@ -270,58 +269,65 @@ class BinarySearchTree(object):
                 self.draw(child, graph, no_iter=no_iter+1)
             else:
                 side = str(side)
-                empty_node = pydot.Node("empty-"+str(current_node)+"-"+side, style="filled", fillcolor="red", shape="point", width=".2", height=".2")
+                empty_node = pydot.Node(
+                    "empty-"+str(current_node)+"-"+side,
+                    style="filled",
+                    fillcolor="red",
+                    shape="point",
+                    width=".2",
+                    height=".2"
+                )
                 graph.add_node(empty_node)
                 edge = pydot.Edge(str(current_node), empty_node)
                 graph.add_edge(edge)
-                
+
         if current_node.is_root():
             graph.write_png(filename)
 
-            
+
 class HTML(object):
-    
+
     def __init__(self, filename):
         self.filename = filename
         self.html = '<h1>Repr&eacute;sentation de l\'arbre</h1>'
-        
+
     def add_image(self, image):
         self.html += '<div style="display: inline; border: solid 1px black"><img src="{image}" style="display: inline" /><div style="display: inline-block">{image}</div></div>\n'.format(image=image)
-        
+
     def __del__(self):
-        
+
         with open(self.filename, mode='w') as fd:
             fd.write(self.html)
-        
+
+
 def snapshot(tree, html, i):
     filename = 'trees/tree-' + str(i) + '.png'
     tree.draw(filename=filename)
     html.add_image(filename)
 
+
 def test():
     from random import shuffle
-    
+
     t = BinarySearchTree()
     keys = [1,2,3,4,5,6,7,8]
     keys = list(set((1,3,5,2,4,7,5,9,3,7,78, 10, 15, 21)))
     shuffle(keys)
     keys = [15, 5, 78, 21, 4, 1, 7, 10, 9, 2, 3]
     print(keys)
-    
+
     html = HTML('tree.html')
     for i, k in enumerate(keys):
         t[k] = True
         snapshot(t, html, 'insert-'+str(k))
-        
+
     for i, k in enumerate(keys):
         del t[k]
         snapshot(t, html, 'del-'+str(k))
-        
+
     for node in [3, 10, 5, 15]:
         del t[node]
         snapshot(t, html, "del-" + str(node))
-
-
 
 
 if __name__ == '__main__':
