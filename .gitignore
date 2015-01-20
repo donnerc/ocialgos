@@ -1,4 +1,4 @@
 *.pyc
 .c9
 *sublime*
-trees/*.png
+trees/*
