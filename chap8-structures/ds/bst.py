@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import pydot
+
 
 class TreeNode(object):
 
@@ -45,6 +47,65 @@ class TreeNode(object):
             self.leftChild.parent = self
         if self.hasRightChild():
             self.rightChild.parent = self
+
+    def findSuccessor(self):
+        '''
+
+        Si findSuccessor est appelé sur un noeud qui possède un fils droit, il
+        retournera le plus petit noeud du sous-arbre correspondant. Le noeud
+        retourné n'aura alors pas de fils gauche.
+
+        '''
+        succ = None
+        if self.hasRightChild():
+            succ = self.rightChild.findMin()
+        else:
+            if self.parent:
+                if self.isLeftChild():
+                    succ = self.parent
+                else:
+                    self.parent.rightChild = None
+                    succ = self.parent.findSuccessor()
+                    self.parent.rightChild = self
+        return succ
+
+    def findMin(self):
+        current = self
+        while current.hasLeftChild():
+            current = current.leftChild
+        return current
+
+    def spliceOut(self):
+        '''
+
+        Supprimer le noeud de l'arbre. On suppose que ce noeud n'a qu'un seul
+        fils.
+
+        '''
+        if self.isLeaf():
+            if self.isLeftChild():
+                self.parent.leftChild = None
+            else:
+                self.parent.rightChild = None
+
+        # est-il possible qu'il y ait deux fils à ce stade? Si oui, je pense
+        # que ce code peut créer des problèmes
+        elif self.hasAnyChildren():
+            if self.hasLeftChild():
+                if self.isLeftChild():
+                    self.parent.leftChild = self.leftChild
+                else:
+                    self.parent.rightChild = self.leftChild
+                self.leftChild.parent = self.parent
+            else:
+                if self.isLeftChild():
+                    self.parent.leftChild = self.rightChild
+                else:
+                    self.parent.rightChild = self.rightChild
+                self.rightChild.parent = self.parent
+
+    def __str__(self):
+        return str(self.key)
 
 
 class BinarySearchTree(object):
@@ -127,62 +188,6 @@ class BinarySearchTree(object):
     def __delitem__(self, key):
         self.delete(key)
 
-    def spliceOut(self):
-        '''
-
-        Supprimer le noeud de l'arbre. On suppose que ce noeud n'a qu'un seul
-        fils.
-
-        '''
-        if self.isLeaf():
-            if self.isLeftChild():
-                self.parent.leftChild = None
-            else:
-                self.parent.rightChild = None
-
-        # est-il possible qu'il y ait deux fils à ce stade? Si oui, je pense
-        # que ce code peut créer des problèmes
-        elif self.hasAnyChildren():
-            if self.hasLeftChild():
-                if self.isLeftChild():
-                    self.parent.leftChild = self.leftChild
-                else:
-                    self.parent.rightChild = self.leftChild
-                self.leftChild.parent = self.parent
-            else:
-                if self.isLeftChild():
-                    self.parent.leftChild = self.rightChild
-                else:
-                    self.parent.rightChild = self.rightChild
-                self.rightChild.parent = self.parent
-
-    def findSuccessor(self):
-        '''
-
-        Si findSuccessor est appelé sur un noeud qui possède un fils droit, il
-        retournera le plus petit noeud du sous-arbre correspondant. Le noeud
-        retourné n'aura alors pas de fils gauche.
-
-        '''
-        succ = None
-        if self.hasRightChild():
-            succ = self.rightChild.findMin()
-        else:
-            if self.parent:
-                if self.isLeftChild():
-                    succ = self.parent
-                else:
-                    self.parent.rightChild = None
-                    succ = self.parent.findSuccessor()
-                    self.parent.rightChild = self
-        return succ
-
-    def findMin(self):
-        current = self
-        while current.hasLeftChild():
-            current = current.leftChild
-        return current
-
     def remove(self, currentNode):
         if currentNode.isLeaf():  # leaf
             if currentNode == currentNode.parent.leftChild:
@@ -229,15 +234,80 @@ class BinarySearchTree(object):
                     )
 
 
-def test():
-    mytree = BinarySearchTree()
-    mytree[3] = 'red'
-    mytree[4] = 'blue'
-    mytree[6] = 'yellow'
-    mytree[2] = 'at'
+def draw(tree, current_node=None, graph=None, no_iter=None, filename=None):
+    # parcourirdepuis la racine et rajouter les noeuds (faire un parcours
+    # préfixé ???) TODO: write code...: création du graphe permettant de
+    # représenter l'arbre
+    graph = graph or pydot.Dot(graph_type='graph')
+    current_node = current_node or tree.root
+    no_iter = no_iter or 1
+    filename = filename or 'trees/bst.png'
 
-    print(mytree[6])
-    print(mytree[2])
+    if no_iter == 1:
+        with open('tree.html', mode='w') as fd:
+            fd.write('<h1>Representation de l\'arbre</h1>\n')
+
+    for (side, child) in [(0, current_node.leftChild), (1, current_node.rightChild)]:
+        if child:
+            edge = pydot.Edge(str(current_node), str(child))
+            graph.add_edge(edge)
+            draw(tree, child, graph, no_iter=no_iter+1)
+        else:
+            side = str(side)
+            empty_node = pydot.Node(
+                "empty-"+str(current_node)+"-"+side,
+                style="filled",
+                fillcolor="red",
+                shape="point",
+                width=".2",
+                height=".2"
+            )
+            graph.add_node(empty_node)
+            edge = pydot.Edge(str(current_node), empty_node)
+            graph.add_edge(edge)
+
+    if current_node.isRoot():
+        graph.write_png(filename)
+
+
+class HTML(object):
+
+    def __init__(self, filename):
+        self.filename = filename
+        self.html = '<h1>Repr&eacute;sentation de l\'arbre</h1>'
+
+    def add_image(self, image):
+        self.html += '<div style="display: inline; border: solid 1px black"><img src="{image}" style="display: inline" /><div style="display: inline-block">{image}</div></div>\n'.format(image=image)
+
+    def __del__(self):
+
+        with open(self.filename, mode='w') as fd:
+            fd.write(self.html)
+
+
+def snapshot(tree, html, i):
+    filename = 'trees/tree-' + str(i) + '.png'
+    draw(tree, filename=filename)
+    html.add_image(filename)
+
+
+def test():
+    from random import shuffle
+
+    t = BinarySearchTree()
+
+    keys = [15, 5, 78, 21, 4, 1, 7, 10, 9, 2, 3]
+    print(keys)
+
+    html = HTML('tree.html')
+    for i, k in enumerate(keys):
+        t[k] = True
+        snapshot(t, html, 'insert-'+str(k))
+
+    for i, k in enumerate(keys):
+        del t[k]
+        snapshot(t, html, 'del-'+str(k))
+
 
 
 if __name__ == '__main__':
