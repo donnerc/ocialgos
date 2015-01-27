@@ -333,12 +333,12 @@ def snapshot(tree, html, i):
 
 
 def test():
-    from random import shuffle
+    from random import shuffle, randint
 
     t = BinarySearchTree()
 
     keys = [15, 5, 78, 21, 4, 1, 7, 10, 9, 2, 3, 22, 26, 41, 53, 100, -5, 132]
-    keys = [15, 5, 78, 21, 4, 1, 7, 10, 9, 2]
+    keys = [randint(1,99) for i in range(10)]
     print(keys)
 
     html = HTML('tree.html')
