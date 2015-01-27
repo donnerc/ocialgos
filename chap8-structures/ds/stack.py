@@ -6,7 +6,7 @@ class Stack(object):
         self._items = []
         self._size = 0
 
-    def isEmpty(self):
+    def is_empty(self):
         return self._size == 0
 
     def push(self, item):
@@ -31,7 +31,7 @@ class Stack(object):
         
 def test():
     s = Stack()
-    s.isEmpty()
+    s.is_empty()
     print(s)
     s.push(4)
     print(s)
@@ -43,7 +43,7 @@ def test():
     print(s)
     s.size()
     print(s)
-    s.isEmpty()
+    s.is_empty()
     print(s)
     s.push(8)
     print(s)
