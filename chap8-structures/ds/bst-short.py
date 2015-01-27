@@ -350,7 +350,7 @@ def test():
         snapshot(t, html, 'insert-'+str(k))
 
     shuffle(keys)
-    html.add_title("Supression des noeuds : ordre = " + str(keys))
+    html.add_title("Suppression des noeuds : ordre = " + str(keys))
 
     for i, k in enumerate(keys):
         del t[k]
