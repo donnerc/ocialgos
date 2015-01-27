@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 # documentation pour pydot : https://pythonhaven.wordpress.com/tag/pydot/
 import pydot
 
+
 class Side(object):
     L = 0
     R = 1
@@ -35,9 +36,9 @@ class TreeNode(object):
         self.child = [left, right]
         self.parent = parent
         self.side_in_parent = side_in_parent
-        
+
     def __str__(self):
-        return str(self.key)
+        return str(self.key)  # + '>' + str(self.parent)
 
     def has_child(self, side):
         return self.child[side]
@@ -66,8 +67,7 @@ class TreeNode(object):
         for side in [Side.L, Side.R]:
             if self.has_child(side):
                 self.child[side].parent = self
-                
-                
+
     def splice_out(self):
         '''
 
@@ -84,6 +84,8 @@ class TreeNode(object):
                 child_side = Side.R
             unique_child = self.child[child_side]
             self.parent.child[self.side_in_parent] = unique_child
+            unique_child.parent = self.parent
+            unique_child.side_in_parent = self.side_in_parent
         else:
             raise NodeError('Error, cannot splice out node with two childs')
 
@@ -108,6 +110,7 @@ class TreeNode(object):
                 succ = self.parent
             else:
                 succ = self.parent.find_successor(down=False)
+
         return succ
 
     def find_min(self):
@@ -208,32 +211,33 @@ class BinarySearchTree(object):
                 self.remove(node_to_remove)
                 self.size = self.size - 1
             else:
-                raise KeyError('Error, key not in tree')
+                raise KeyError('Error, key {} not in tree'.format(key))
         elif self.size == 1 and self.root.key == key:
             self.root = None
             self.size = self.size - 1
         else:
-            raise KeyError('Error, key not in tree')
+            raise KeyError('Error, key {} not in tree'.format(key))
 
     def __delitem__(self, key):
         self.delete(key)
 
     def remove(self, cur_node):
         if cur_node.is_leaf():  # leaf
+            print("remove node", str(cur_node), "leaf")
             if cur_node.is_child(Side.L):
                 cur_node.parent.child[Side.L] = None
             else:
+                print('parent', str(cur_node), '<==', str(cur_node.parent))
                 cur_node.parent.child[Side.R] = None
 
         elif cur_node.has_both_children():  # interior
             succ = cur_node.find_successor()
-            # cur_node.child[Side.R] = succ.child[Side.R]
             succ.splice_out()
             cur_node.key = succ.key
             cur_node.payload = succ.payload
 
         else:  # this node has one child
-
+            print("remove node", str(cur_node), "one child")
             # déterminer de quel côté se situe le fils
             side = Side.L
             if cur_node.has_child(Side.R):
@@ -244,84 +248,117 @@ class BinarySearchTree(object):
             # changer la référence dans le parent
             if cur_node.parent:
                 cur_node.parent.child[cur_node.side_in_parent] = unique_child
-            # changer la référence dans le fils vers le parent du noeud
-            # courant
-            unique_child.side_in_parent = cur_node.side_in_parent
-            unique_child.parent = cur_node.parent
+                # changer la référence dans le fils vers le parent du noeud
+                # courant
+                unique_child.side_in_parent = cur_node.side_in_parent
+                unique_child.parent = cur_node.parent
+            else:
+                # cur_node est la racine. il faut donc faire de l'unique fils
+                # la nouvelle racine de l'arbre
+                self.root = unique_child
+                unique_child.side_in_parent = None
+                unique_child.parent = None
 
-    def draw(self, current_node=None, graph=None, no_iter=None, filename=None):
-        # parcourirdepuis la racine et rajouter les noeuds (faire un parcours préfixé ???)
-        # TODO: write code...:
-        # création du graphe permettant de représenter l'arbre
-        graph = graph or pydot.Dot(graph_type='graph')
-        current_node = current_node or self.root
-        no_iter = no_iter or 1
-        filename = filename or 'trees/bst.png'
-        
-        if no_iter == 1:
-            with open('tree.html', mode='w') as fd:
-                fd.write('<h1>Representation de l\'arbre</h1>\n')
-                
 
+def draw(tree, current_node=None, graph=None, no_iter=None, filename=None):
+    # parcourirdepuis la racine et rajouter les noeuds (faire un parcours
+    # préfixé ???) TODO: write code...: création du graphe permettant de
+    # représenter l'arbre
+    graph = graph or pydot.Dot(graph_type='graph')
+    current_node = current_node or tree.root
+    no_iter = no_iter or 1
+    filename = filename  # or 'trees/bst.png'
+
+    if no_iter == 1:
+        with open('tree.html', mode='w') as fd:
+            fd.write('<h1>Representation de l\'arbre</h1>\n')
+
+    if current_node is None:
+        # la racine est vide ... il n'y a rien à dessiner
+        empty_node = pydot.Node(
+            "empty-"+str(current_node),
+            style="filled",
+            fillcolor="red",
+            shape="point",
+            width=".2",
+            height=".2"
+        )
+        graph.add_node(empty_node)
+    else:
         for (side, child) in enumerate(current_node.child):
             if child:
                 edge = pydot.Edge(str(current_node), str(child))
                 graph.add_edge(edge)
-                self.draw(child, graph, no_iter=no_iter+1)
+                draw(tree, child, graph, no_iter=no_iter+1)
             else:
                 side = str(side)
-                empty_node = pydot.Node("empty-"+str(current_node)+"-"+side, style="filled", fillcolor="red", shape="point", width=".2", height=".2")
+                empty_node = pydot.Node(
+                    "empty-"+str(current_node)+"-"+side,
+                    style="filled",
+                    fillcolor="red",
+                    shape="point",
+                    width=".2",
+                    height=".2"
+                )
                 graph.add_node(empty_node)
                 edge = pydot.Edge(str(current_node), empty_node)
                 graph.add_edge(edge)
-                
-        if current_node.is_root():
-            graph.write_png(filename)
 
-            
+    if current_node is None or current_node.is_root():
+        graph.write_png(filename)
+
+
 class HTML(object):
-    
+
     def __init__(self, filename):
         self.filename = filename
         self.html = '<h1>Repr&eacute;sentation de l\'arbre</h1>'
-        
+
     def add_image(self, image):
-        self.html += '<div style="display: inline; border: solid 1px black"><img src="{image}" style="display: inline" /><div style="display: inline-block">{image}</div></div>\n'.format(image=image)
-        
+        self.html += '<div style="display: inline; padding: 5px; "><img src="{image}" style="display: inline; border: solid 1px black; max-width: 180px ;" /><div style="display: none; font-size: 8px">{image}</div></div>\n'.format(image=image)
+
+    def add_title(self, title):
+        self.html += "<h2>{title}</h2>".format(title=title)
+
     def __del__(self):
-        
+
         with open(self.filename, mode='w') as fd:
             fd.write(self.html)
-        
+
+
 def snapshot(tree, html, i):
     filename = 'trees/tree-' + str(i) + '.png'
-    tree.draw(filename=filename)
+    draw(tree, filename=filename)
     html.add_image(filename)
+
 
 def test():
     from random import shuffle
-    
+
     t = BinarySearchTree()
-    keys = [1,2,3,4,5,6,7,8]
-    keys = list(set((1,3,5,2,4,7,5,9,3,7,78, 10, 15, 21)))
-    shuffle(keys)
-    keys = [15, 5, 78, 21, 4, 1, 7, 10, 9, 2, 3]
+
+    keys = [15, 5, 78, 21, 4, 1, 7, 10, 9, 2, 3, 22, 26, 41, 53, 100, -5, 132]
+    keys = [15, 5, 78, 21, 4, 1, 7, 10, 9, 2]
     print(keys)
-    
+
     html = HTML('tree.html')
+    shuffle(keys)
+    html.add_title("Insertion des noeuds : ordre = " + str(keys))
+
     for i, k in enumerate(keys):
         t[k] = True
         snapshot(t, html, 'insert-'+str(k))
-        
+
+    shuffle(keys)
+    html.add_title("Suppression des noeuds : ordre = " + str(keys))
+
     for i, k in enumerate(keys):
         del t[k]
         snapshot(t, html, 'del-'+str(k))
-        
-    for node in [3, 10, 5, 15]:
-        del t[node]
-        snapshot(t, html, "del-" + str(node))
 
-
+    # for node in [3, 10, 5, 15]:
+    #     del t[node]
+    #     snapshot(t, html, "del-" + str(node))
 
 
 if __name__ == '__main__':
