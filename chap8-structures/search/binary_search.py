@@ -11,20 +11,17 @@ def search(n, start=0, end=None):
     end = end or len(nombres) - 1
 
     middle = (start + end) // 2
-    if start == middle:
-        if n == nombres[start]:
-            return start
-        elif n == nombres[end]:
-            return end
+    if end - start <= 0:
+        if n == nombres[middle]:
+            return nombres[middle]
         else:
             return None
-
+            
     if n < nombres[middle]:
-        return search(n, start=start, end=middle)
+        return search(n, start=start, end=middle-1)
 
     elif n > nombres[middle]:
-        return search(n, start=middle, end=end)
-
+        return search(n, start=middle+1, end=end)
     else:
         # n se trouve forcément dans la liste à la position middle
         return middle
